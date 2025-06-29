@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EML Header Parser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .results-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .copy-btn {
+            padding: 8px 16px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #229954;
+            transform: translateY(-1px);
+        }
+
+        .headers-container {
+            background: #2c3e50;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .headers-content {
+            color: #ecf0f1;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            padding: 25px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .headers-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .headers-content::-webkit-scrollbar-track {
+            background: #34495e;
+        }
+
+        .headers-content::-webkit-scrollbar-thumb {
+            background: #5dade2;
+            border-radius: 4px;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 EML Header Parser</h1>
+            <p>Upload an EML file to extract and view its internet headers</p>
+        </div>
+        
+        <div class="content">
+            <div class="upload-section">
+                <div class="file-input-wrapper">
+                    <input type="file" id="emlFile" class="file-input" accept=".eml,.msg" />
+                    <label for="emlFile" class="file-input-label">
+                        📁 Choose EML File
+                    </label>
+                </div>
+                <div id="fileInfo" class="file-info"></div>
+                <div id="error" class="error"></div>
+            </div>
+
+            <div id="results" class="results-section">
+                <div id="stats" class="stats"></div>
+                
+                <div class="results-header">
+                    <h2 class="results-title">Internet Headers</h2>
+                    <button id="copyBtn" class="copy-btn">📋 Copy Headers</button>
+                </div>
+                
+                <div class="headers-container">
+                    <div id="headersOutput" class="headers-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let parsedHeaders = '';
+        
+        document.getElementById('emlFile').addEventListener('change', handleFileSelect);
+        document.getElementById('copyBtn').addEventListener('click', copyHeaders);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const fileInfo = document.getElementById('fileInfo');
+            const error = document.getElementById('error');
+            const results = document.getElementById('results');
+
+            // Reset previous results
+            error.style.display = 'none';
+            results.style.display = 'none';
+
+            // Show file info
+            fileInfo.innerHTML = `
+                <strong>File:</strong> ${file.name}<br>
+                <strong>Size:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
+                <strong>Type:</strong> ${file.type || 'Unknown'}
+            `;
+            fileInfo.style.display = 'block';
+
+            // Read and parse file
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    parseEMLFile(e.target.result, file.name);
+                } catch (err) {
+                    showError('Error reading file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseEMLFile(content, filename) {
+            try {
+                // Split content into lines
+                const lines = content.split(/\r?\n/);
+                
+                // Find where headers end (first empty line)
+                let headerEndIndex = -1;
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].trim() === '') {
+                        headerEndIndex = i;
+                        break;
+                    }
+                }
+
+                if (headerEndIndex === -1) {
+                    // No empty line found, treat entire content as headers
+                    headerEndIndex = lines.length;
+                }
+
+                // Extract headers
+                const headerLines = lines.slice(0, headerEndIndex);
+                
+                // Parse headers (handle line folding)
+                const headers = [];
+                let currentHeader = '';
+                
+                for (let line of headerLines) {
+                    if (line.match(/^[^\s:]+:/)) {
+                        // New header
+                        if (currentHeader) {
+                            headers.push(currentHeader.trim());
+                        }
+                        currentHeader = line;
+                    } else if (line.match(/^\s+/) && currentHeader) {
+                        // Continuation of previous header (folded line)
+                        currentHeader += '\n' + line;
+                    } else if (line.trim() !== '') {
+                        // Start new header if we don't have one
+                        if (!currentHeader) {
+                            currentHeader = line;
+                        }
+                    }
+                }
+                
+                // Add the last header
+                if (currentHeader) {
+                    headers.push(currentHeader.trim());
+                }
+
+                if (headers.length === 0) {
+                    showError('No email headers found in the file. Please ensure this is a valid EML file.');
+                    return;
+                }
+
+                // Format headers for display
+                parsedHeaders = headers.join('\n');
+                
+                // Display results
+                displayResults(headers, filename);
+                
+            } catch (err) {
+                showError('Error parsing EML file: ' + err.message);
+            }
+        }
+
+        function displayResults(headers, filename) {
+            const results = document.getElementById('results');
+            const headersOutput = document.getElementById('headersOutput');
+            const stats = document.getElementById('stats');
+            
+            // Display headers
+            headersOutput.textContent = parsedHeaders;
+            
+            // Calculate stats
+            const headerCount = headers.length;
+            const totalSize = parsedHeaders.length;
+            
+            // Count unique header types
+            const headerTypes = new Set();
+            headers.forEach(header => {
+                const match = header.match(/^([^:]+):/);
+                if (match) {
+                    headerTypes.add(match[1].toLowerCase());
+                }
+            });
+            
+            // Display stats
+            stats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${headerCount}</div>
+                    <div class="stat-label">Total Headers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${headerTypes.size}</div>
+                    <div class="stat-label">Unique Types</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${(totalSize / 1024).toFixed(1)}KB</div>
+                    <div class="stat-label">Headers Size</div>
+                </div>
+            `;
+            
+            results.style.display = 'block';
+        }
+
+        function copyHeaders() {
+            if (!parsedHeaders) return;
+            
+            navigator.clipboard.writeText(parsedHeaders).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                btn.style.background = '#27ae60';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#27ae60';
+                }, 2000);
+            }).catch(err => {
+                showError('Failed to copy to clipboard: ' + err.message);
+            });
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
