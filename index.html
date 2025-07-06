@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EML Header Parser</title>
+    <title>EML Header Analyzer Pro</title>
     <style>
         * {
             margin: 0;
@@ -11,48 +11,92 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary-bg: #0a0a0a;
+            --secondary-bg: #1a1a1a;
+            --accent-bg: #2a2a2a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #666666;
+            --accent-color: #00d4ff;
+            --success-color: #00ff88;
+            --warning-color: #ff9500;
+            --danger-color: #ff3333;
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-accent: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            --shadow-primary: 0 20px 40px rgba(0, 0, 0, 0.3);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --border-radius: 16px;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-bg);
+            color: var(--text-primary);
             min-height: 100vh;
-            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .background-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(118, 75, 162, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(102, 126, 234, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            padding: 20px;
         }
 
         .header {
-            background: linear-gradient(45deg, #2c3e50, #3498db);
-            color: white;
-            padding: 30px;
             text-align: center;
+            margin-bottom: 40px;
+            padding: 60px 20px;
+            background: var(--gradient-card);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-primary);
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            font-weight: 800;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
         }
 
         .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .content {
-            padding: 40px;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         .upload-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
             text-align: center;
             margin-bottom: 40px;
+            box-shadow: var(--shadow-card);
         }
 
         .file-input-wrapper {
@@ -66,83 +110,235 @@
         }
 
         .file-input-label {
-            display: inline-block;
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 36px;
+            background: var(--gradient-accent);
             color: white;
             border-radius: 50px;
             cursor: pointer;
             font-size: 1.1rem;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+            text-decoration: none;
         }
 
         .file-input-label:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 212, 255, 0.4);
         }
 
         .file-info {
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(52, 152, 219, 0.1);
-            border-radius: 10px;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: var(--border-radius);
             display: none;
+            color: var(--success-color);
         }
 
         .results-section {
             display: none;
+            animation: fadeInUp 0.6s ease-out;
         }
 
-        .results-header {
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s ease;
+            box-shadow: var(--shadow-card);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .analysis-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .analysis-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .analysis-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #ecf0f1;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .results-title {
-            font-size: 1.5rem;
+        .analysis-item:last-child {
+            border-bottom: none;
+        }
+
+        .analysis-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .analysis-value {
+            color: var(--text-primary);
             font-weight: 600;
-            color: #2c3e50;
+            text-align: right;
+            flex: 1;
+            margin-left: 20px;
         }
 
-        .copy-btn {
-            padding: 8px 16px;
-            background: #27ae60;
-            color: white;
+        .security-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .security-good {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success-color);
+        }
+
+        .security-warning {
+            background: rgba(255, 149, 0, 0.2);
+            color: var(--warning-color);
+        }
+
+        .security-danger {
+            background: rgba(255, 51, 51, 0.2);
+            color: var(--danger-color);
+        }
+
+        .headers-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+        }
+
+        .headers-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .headers-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 0.9rem;
+            font-weight: 600;
             transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .copy-btn:hover {
-            background: #229954;
-            transform: translateY(-1px);
+        .btn-primary {
+            background: var(--gradient-accent);
+            color: white;
         }
 
-        .headers-container {
-            background: #2c3e50;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
 
         .headers-content {
-            color: #ecf0f1;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.85rem;
             line-height: 1.6;
-            padding: 25px;
+            padding: 30px;
             white-space: pre-wrap;
             word-wrap: break-word;
-            max-height: 600px;
+            max-height: 500px;
             overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .headers-content::-webkit-scrollbar {
@@ -150,105 +346,188 @@
         }
 
         .headers-content::-webkit-scrollbar-track {
-            background: #34495e;
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .headers-content::-webkit-scrollbar-thumb {
-            background: #5dade2;
+            background: var(--accent-color);
             border-radius: 4px;
         }
 
         .error {
-            background: #e74c3c;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
+            background: rgba(255, 51, 51, 0.1);
+            border: 1px solid rgba(255, 51, 51, 0.3);
+            color: var(--danger-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
             margin-top: 20px;
             display: none;
         }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+        .routing-path {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .routing-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 6px;
+        }
+
+        .routing-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .tab-container {
             margin-bottom: 30px;
         }
 
-        .stat-card {
-            background: linear-gradient(45deg, #f093fb, #f5576c);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        .tab-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
         }
 
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
+        .tab-button {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
             font-size: 0.9rem;
-            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .tab-button.active {
+            background: var(--gradient-accent);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         @media (max-width: 768px) {
             .header h1 {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
             
-            .content {
-                padding: 20px;
+            .analysis-grid {
+                grid-template-columns: 1fr;
             }
             
-            .results-header {
+            .headers-header {
                 flex-direction: column;
                 gap: 15px;
+            }
+            
+            .action-buttons {
+                flex-wrap: wrap;
             }
         }
     </style>
 </head>
 <body>
+    <div class="background-pattern"></div>
+    
     <div class="container">
         <div class="header">
-            <h1>📧 EML Header Parser</h1>
-            <p>Upload an EML file to extract and view its internet headers</p>
+            <h1>📧 EML Analyzer Pro</h1>
+            <p>Advanced email header analysis with security insights, routing information, and comprehensive metadata extraction</p>
         </div>
         
-        <div class="content">
-            <div class="upload-section">
-                <div class="file-input-wrapper">
-                    <input type="file" id="emlFile" class="file-input" accept=".eml,.msg" />
-                    <label for="emlFile" class="file-input-label">
-                        📁 Choose EML File
-                    </label>
-                </div>
-                <div id="fileInfo" class="file-info"></div>
-                <div id="error" class="error"></div>
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <input type="file" id="emlFile" class="file-input" accept=".eml,.msg" />
+                <label for="emlFile" class="file-input-label">
+                    <span>📁</span>
+                    <span>Choose EML File</span>
+                </label>
             </div>
+            <div id="fileInfo" class="file-info"></div>
+            <div id="error" class="error"></div>
+        </div>
 
-            <div id="results" class="results-section">
-                <div id="stats" class="stats"></div>
-                
-                <div class="results-header">
-                    <h2 class="results-title">Internet Headers</h2>
-                    <button id="copyBtn" class="copy-btn">📋 Copy Headers</button>
+        <div id="results" class="results-section">
+            <div class="stats-grid" id="statsGrid"></div>
+            
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="overview">📊 Overview</button>
+                    <button class="tab-button" data-tab="security">🔒 Security</button>
+                    <button class="tab-button" data-tab="routing">🛣️ Routing</button>
+                    <button class="tab-button" data-tab="technical">⚙️ Technical</button>
                 </div>
                 
-                <div class="headers-container">
-                    <div id="headersOutput" class="headers-content"></div>
+                <div class="tab-content active" id="overview">
+                    <div class="analysis-grid" id="overviewAnalysis"></div>
                 </div>
+                
+                <div class="tab-content" id="security">
+                    <div class="analysis-grid" id="securityAnalysis"></div>
+                </div>
+                
+                <div class="tab-content" id="routing">
+                    <div class="analysis-card" id="routingAnalysis"></div>
+                </div>
+                
+                <div class="tab-content" id="technical">
+                    <div class="analysis-grid" id="technicalAnalysis"></div>
+                </div>
+            </div>
+            
+            <div class="headers-section">
+                <div class="headers-header">
+                    <h2 class="headers-title">📄 Raw Headers</h2>
+                    <div class="action-buttons">
+                        <button id="copyBtn" class="btn btn-primary">📋 Copy</button>
+                        <button id="downloadBtn" class="btn btn-secondary">💾 Download</button>
+                    </div>
+                </div>
+                
+                <div id="headersOutput" class="headers-content"></div>
             </div>
         </div>
     </div>
 
     <script>
         let parsedHeaders = '';
+        let headerData = {};
         
         document.getElementById('emlFile').addEventListener('change', handleFileSelect);
         document.getElementById('copyBtn').addEventListener('click', copyHeaders);
+        document.getElementById('downloadBtn').addEventListener('click', downloadHeaders);
+        
+        // Tab functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.dataset.tab;
+                switchTab(tabName);
+            });
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
@@ -258,19 +537,20 @@
             const error = document.getElementById('error');
             const results = document.getElementById('results');
 
-            // Reset previous results
             error.style.display = 'none';
             results.style.display = 'none';
 
-            // Show file info
             fileInfo.innerHTML = `
-                <strong>File:</strong> ${file.name}<br>
-                <strong>Size:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
-                <strong>Type:</strong> ${file.type || 'Unknown'}
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>📁 ${file.name}</strong><br>
+                        <span style="color: var(--text-muted);">Size: ${(file.size / 1024).toFixed(2)} KB • Type: ${file.type || 'EML'}</span>
+                    </div>
+                    <div style="color: var(--success-color); font-size: 1.2rem;">✅</div>
+                </div>
             `;
             fileInfo.style.display = 'block';
 
-            // Read and parse file
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -284,62 +564,24 @@
 
         function parseEMLFile(content, filename) {
             try {
-                // Split content into lines
                 const lines = content.split(/\r?\n/);
+                let headerEndIndex = lines.findIndex(line => line.trim() === '');
                 
-                // Find where headers end (first empty line)
-                let headerEndIndex = -1;
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].trim() === '') {
-                        headerEndIndex = i;
-                        break;
-                    }
-                }
-
                 if (headerEndIndex === -1) {
-                    // No empty line found, treat entire content as headers
                     headerEndIndex = lines.length;
                 }
 
-                // Extract headers
                 const headerLines = lines.slice(0, headerEndIndex);
+                const headers = parseHeaders(headerLines);
                 
-                // Parse headers (handle line folding)
-                const headers = [];
-                let currentHeader = '';
-                
-                for (let line of headerLines) {
-                    if (line.match(/^[^\s:]+:/)) {
-                        // New header
-                        if (currentHeader) {
-                            headers.push(currentHeader.trim());
-                        }
-                        currentHeader = line;
-                    } else if (line.match(/^\s+/) && currentHeader) {
-                        // Continuation of previous header (folded line)
-                        currentHeader += '\n' + line;
-                    } else if (line.trim() !== '') {
-                        // Start new header if we don't have one
-                        if (!currentHeader) {
-                            currentHeader = line;
-                        }
-                    }
-                }
-                
-                // Add the last header
-                if (currentHeader) {
-                    headers.push(currentHeader.trim());
-                }
-
                 if (headers.length === 0) {
                     showError('No email headers found in the file. Please ensure this is a valid EML file.');
                     return;
                 }
 
-                // Format headers for display
                 parsedHeaders = headers.join('\n');
+                headerData = analyzeHeaders(headers);
                 
-                // Display results
                 displayResults(headers, filename);
                 
             } catch (err) {
@@ -347,44 +589,338 @@
             }
         }
 
-        function displayResults(headers, filename) {
-            const results = document.getElementById('results');
-            const headersOutput = document.getElementById('headersOutput');
-            const stats = document.getElementById('stats');
+        function parseHeaders(lines) {
+            const headers = [];
+            let currentHeader = '';
             
-            // Display headers
-            headersOutput.textContent = parsedHeaders;
+            for (let line of lines) {
+                if (line.match(/^[^\s:]+:/)) {
+                    if (currentHeader) {
+                        headers.push(currentHeader.trim());
+                    }
+                    currentHeader = line;
+                } else if (line.match(/^\s+/) && currentHeader) {
+                    currentHeader += '\n' + line;
+                } else if (line.trim() !== '') {
+                    if (!currentHeader) {
+                        currentHeader = line;
+                    }
+                }
+            }
             
-            // Calculate stats
-            const headerCount = headers.length;
-            const totalSize = parsedHeaders.length;
+            if (currentHeader) {
+                headers.push(currentHeader.trim());
+            }
             
-            // Count unique header types
-            const headerTypes = new Set();
+            return headers;
+        }
+
+        function parseEmailAddress(emailString) {
+            if (!emailString || emailString === 'Not found') return emailString;
+            
+            // Extract email from formats like:
+            // "John Doe" <john@example.com>
+            // John Doe <john@example.com>
+            // <john@example.com>
+            // john@example.com
+            
+            const emailMatch = emailString.match(/<([^>]+)>/);
+            if (emailMatch) {
+                return emailMatch[1];
+            }
+            
+            // If no angle brackets, check if it's a plain email
+            const plainEmailMatch = emailString.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+            if (plainEmailMatch) {
+                return plainEmailMatch[0];
+            }
+            
+            return emailString;
+        }
+
+        function extractDisplayName(emailString) {
+            if (!emailString || emailString === 'Not found') return 'Unknown';
+            
+            // Extract display name from formats like:
+            // "John Doe" <john@example.com> -> John Doe
+            // John Doe <john@example.com> -> John Doe
+            
+            const nameMatch = emailString.match(/^"?([^"<]+)"?\s*</);
+            if (nameMatch) {
+                return nameMatch[1].trim();
+            }
+            
+            // If no display name found, return the email or original string
+            return parseEmailAddress(emailString);
+        }
+
+        function analyzeHeaders(headers) {
+            const analysis = {
+                basic: {},
+                security: {},
+                routing: [],
+                technical: {},
+                stats: {}
+            };
+            
+            const headerMap = {};
+            
             headers.forEach(header => {
-                const match = header.match(/^([^:]+):/);
+                const match = header.match(/^([^:]+):\s*(.+)/s);
                 if (match) {
-                    headerTypes.add(match[1].toLowerCase());
+                    const key = match[1].toLowerCase();
+                    const value = match[2].trim();
+                    
+                    if (!headerMap[key]) {
+                        headerMap[key] = [];
+                    }
+                    headerMap[key].push(value);
                 }
             });
             
-            // Display stats
-            stats.innerHTML = `
+            // Basic Information
+            analysis.basic.from = parseEmailAddress(headerMap['from']?.[0]) || 'Not found';
+            analysis.basic.fromName = extractDisplayName(headerMap['from']?.[0]) || 'Unknown';
+            analysis.basic.to = parseEmailAddress(headerMap['to']?.[0]) || 'Not found';
+            analysis.basic.toName = extractDisplayName(headerMap['to']?.[0]) || 'Unknown';
+            analysis.basic.subject = headerMap['subject']?.[0] || 'Not found';
+            analysis.basic.date = headerMap['date']?.[0] || 'Not found';
+            analysis.basic.messageId = headerMap['message-id']?.[0] || 'Not found';
+            analysis.basic.contentType = headerMap['content-type']?.[0] || 'Not found';
+            
+            // Security Analysis
+            analysis.security.spf = headerMap['received-spf']?.[0] || 'Not found';
+            analysis.security.dkim = headerMap['dkim-signature'] ? 'Present' : 'Not found';
+            analysis.security.dmarc = headerMap['authentication-results']?.[0]?.includes('dmarc') ? 'Present' : 'Not found';
+            analysis.security.returnPath = parseEmailAddress(headerMap['return-path']?.[0]) || 'Not found';
+            analysis.security.xOriginalSender = parseEmailAddress(headerMap['x-original-sender']?.[0]) || 'Not found';
+            
+            // Routing Information
+            const receivedHeaders = headerMap['received'] || [];
+            analysis.routing = receivedHeaders.map((received, index) => {
+                const fromMatch = received.match(/from\s+([^\s]+)/);
+                const byMatch = received.match(/by\s+([^\s]+)/);
+                const timeMatch = received.match(/;\s*(.+)$/);
+                
+                return {
+                    step: receivedHeaders.length - index,
+                    from: fromMatch ? fromMatch[1] : 'Unknown',
+                    by: byMatch ? byMatch[1] : 'Unknown',
+                    time: timeMatch ? timeMatch[1] : 'Unknown'
+                };
+            });
+            
+            // Technical Details
+            analysis.technical.userAgent = headerMap['user-agent']?.[0] || headerMap['x-mailer']?.[0] || 'Not found';
+            analysis.technical.xOriginatingIp = headerMap['x-originating-ip']?.[0] || 'Not found';
+            analysis.technical.mimeVersion = headerMap['mime-version']?.[0] || 'Not found';
+            analysis.technical.contentTransferEncoding = headerMap['content-transfer-encoding']?.[0] || 'Not found';
+            analysis.technical.xPriority = headerMap['x-priority']?.[0] || headerMap['priority']?.[0] || 'Not found';
+            analysis.technical.listUnsubscribe = headerMap['list-unsubscribe']?.[0] || 'Not found';
+            
+            // Statistics
+            analysis.stats.totalHeaders = headers.length;
+            analysis.stats.uniqueTypes = Object.keys(headerMap).length;
+            analysis.stats.totalSize = parsedHeaders.length;
+            analysis.stats.routingHops = receivedHeaders.length;
+            
+            return analysis;
+        }
+
+        function displayResults(headers, filename) {
+            const results = document.getElementById('results');
+            const headersOutput = document.getElementById('headersOutput');
+            
+            headersOutput.textContent = parsedHeaders;
+            
+            displayStats();
+            displayOverview();
+            displaySecurity();
+            displayRouting();
+            displayTechnical();
+            
+            results.style.display = 'block';
+        }
+
+        function displayStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            const stats = headerData.stats;
+            
+            statsGrid.innerHTML = `
                 <div class="stat-card">
-                    <div class="stat-number">${headerCount}</div>
+                    <div class="stat-number">${stats.totalHeaders}</div>
                     <div class="stat-label">Total Headers</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${headerTypes.size}</div>
+                    <div class="stat-number">${stats.uniqueTypes}</div>
                     <div class="stat-label">Unique Types</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${(totalSize / 1024).toFixed(1)}KB</div>
+                    <div class="stat-number">${(stats.totalSize / 1024).toFixed(1)}KB</div>
                     <div class="stat-label">Headers Size</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.routingHops}</div>
+                    <div class="stat-label">Routing Hops</div>
+                </div>
             `;
+        }
+
+        function displayOverview() {
+            const container = document.getElementById('overviewAnalysis');
+            const basic = headerData.basic;
             
-            results.style.display = 'block';
+            container.innerHTML = `
+                <div class="analysis-card">
+                    <h3>📧 Basic Information</h3>
+                    <div class="analysis-item">
+                        <span class="analysis-label">From Email</span>
+                        <span class="analysis-value">${truncate(basic.from, 40)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">From Name</span>
+                        <span class="analysis-value">${truncate(basic.fromName, 40)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">To Email</span>
+                        <span class="analysis-value">${truncate(basic.to, 40)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">To Name</span>
+                        <span class="analysis-value">${truncate(basic.toName, 40)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Subject</span>
+                        <span class="analysis-value">${truncate(basic.subject, 40)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Date</span>
+                        <span class="analysis-value">${truncate(basic.date, 40)}</span>
+                    </div>
+                </div>
+                <div class="analysis-card">
+                    <h3>🔗 Message Details</h3>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Message ID</span>
+                        <span class="analysis-value">${truncate(basic.messageId, 40)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Content Type</span>
+                        <span class="analysis-value">${truncate(basic.contentType, 40)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Routing Hops</span>
+                        <span class="analysis-value">${headerData.stats.routingHops}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displaySecurity() {
+            const container = document.getElementById('securityAnalysis');
+            const security = headerData.security;
+            
+            const getSecurityIndicator = (value) => {
+                if (value === 'Not found') return '<span class="security-indicator security-warning">Missing</span>';
+                if (value.toLowerCase().includes('pass')) return '<span class="security-indicator security-good">Pass</span>';
+                if (value.toLowerCase().includes('fail')) return '<span class="security-indicator security-danger">Fail</span>';
+                return '<span class="security-indicator security-good">Present</span>';
+            };
+            
+            container.innerHTML = `
+                <div class="analysis-card">
+                    <h3>🔒 Authentication</h3>
+                    <div class="analysis-item">
+                        <span class="analysis-label">SPF Record</span>
+                        <span class="analysis-value">${getSecurityIndicator(security.spf)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">DKIM Signature</span>
+                        <span class="analysis-value">${getSecurityIndicator(security.dkim)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">DMARC Policy</span>
+                        <span class="analysis-value">${getSecurityIndicator(security.dmarc)}</span>
+                    </div>
+                </div>
+                <div class="analysis-card">
+                    <h3>🛡️ Sender Information</h3>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Return Path</span>
+                        <span class="analysis-value">${truncate(security.returnPath, 30)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Original Sender</span>
+                        <span class="analysis-value">${truncate(security.xOriginalSender, 30)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayRouting() {
+            const container = document.getElementById('routingAnalysis');
+            const routing = headerData.routing;
+            
+            let routingHtml = '<h3>🛣️ Email Routing Path</h3>';
+            
+            if (routing.length > 0) {
+                routingHtml += '<div class="routing-path">';
+                routing.forEach(hop => {
+                    routingHtml += `
+                        <div class="routing-step">
+                            <strong>Step ${hop.step}:</strong> ${hop.from} → ${hop.by} (${hop.time})
+                        </div>
+                    `;
+                });
+                routingHtml += '</div>';
+            } else {
+                routingHtml += '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No routing information found in headers</p>';
+            }
+            
+            container.innerHTML = routingHtml;
+        }
+
+        function displayTechnical() {
+            const container = document.getElementById('technicalAnalysis');
+            const technical = headerData.technical;
+            
+            container.innerHTML = `
+                <div class="analysis-card">
+                    <h3>⚙️ Client Information</h3>
+                    <div class="analysis-item">
+                        <span class="analysis-label">User Agent</span>
+                        <span class="analysis-value">${truncate(technical.userAgent, 30)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Originating IP</span>
+                        <span class="analysis-value">${truncate(technical.xOriginatingIp, 30)}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">MIME Version</span>
+                        <span class="analysis-value">${technical.mimeVersion}</span>
+                    </div>
+                </div>
+                <div class="analysis-card">
+                    <h3>📋 Content Details</h3>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Transfer Encoding</span>
+                        <span class="analysis-value">${technical.contentTransferEncoding}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Priority</span>
+                        <span class="analysis-value">${technical.xPriority}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">List Unsubscribe</span>
+                        <span class="analysis-value">${technical.listUnsubscribe === 'Not found' ? 'Not found' : 'Present'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function truncate(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
         }
 
         function copyHeaders() {
@@ -392,22 +928,36 @@
             
             navigator.clipboard.writeText(parsedHeaders).then(() => {
                 const btn = document.getElementById('copyBtn');
-                const originalText = btn.textContent;
-                btn.textContent = '✅ Copied!';
-                btn.style.background = '#27ae60';
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Copied!';
+                btn.style.background = 'var(--success-color)';
                 
                 setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.background = '#27ae60';
+                    btn.innerHTML = originalText;
+                    btn.style.background = '';
                 }, 2000);
             }).catch(err => {
                 showError('Failed to copy to clipboard: ' + err.message);
             });
         }
 
+        function downloadHeaders() {
+            if (!parsedHeaders) return;
+            
+            const blob = new Blob([parsedHeaders], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'email_headers.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         function showError(message) {
             const error = document.getElementById('error');
-            error.textContent = message;
+            error.innerHTML = `<strong>❌ Error:</strong> ${message}`;
             error.style.display = 'block';
         }
     </script>
