@@ -227,6 +227,34 @@
             word-break: break-all;
         }
 
+        .dkim-details {
+            font-family: 'SF Mono', Menlo, Monaco, monospace;
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dkim-param {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .dkim-param-key {
+            color: #22c55e;
+            font-weight: 600;
+            min-width: 80px;
+            margin-right: 10px;
+        }
+
+        .dkim-param-value {
+            color: rgba(255, 255, 255, 0.8);
+            word-break: break-all;
+        }
+
         .security-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -617,14 +645,50 @@
             };
         }
 
+        function parseDKIMSignature(dkimHeader) {
+            if (!dkimHeader) return null;
+            
+            const params = {};
+            const paramRegex = /([a-z])=([^;]+)/g;
+            let match;
+            
+            while ((match = paramRegex.exec(dkimHeader)) !== null) {
+                const key = match[1];
+                const value = match[2].trim();
+                params[key] = value;
+            }
+            
+            return {
+                version: params.v || 'Not specified',
+                algorithm: params.a || 'Not specified',
+                canonicalization: params.c || 'Not specified',
+                domain: params.d || 'Not specified',
+                selector: params.s || 'Not specified',
+                headers: params.h || 'Not specified',
+                bodyHash: params.bh || 'Not specified',
+                signature: params.b || 'Not specified',
+                timestamp: params.t ? new Date(parseInt(params.t) * 1000).toISOString() : 'Not specified',
+                expiration: params.x ? new Date(parseInt(params.x) * 1000).toISOString() : 'Not specified',
+                identity: params.i || 'Not specified',
+                length: params.l || 'Not specified',
+                queryMethods: params.q || 'dns/txt',
+                raw: dkimHeader
+            };
+        }
+
         function analyzeSecurity(headers) {
             const spf = headers['received-spf']?.[0] || 'Not found';
-            const dkim = headers['dkim-signature'] ? 'Present' : 'Not found';
+            const dkim = headers['dkim-signature']?.[0] || null;
+            const dkimParsed = parseDKIMSignature(dkim);
             const dmarc = headers['authentication-results']?.[0]?.includes('dmarc') ? 'Present' : 'Not found';
             
             return {
                 spf: { value: spf, status: spf.includes('pass') ? 'pass' : spf.includes('fail') ? 'fail' : 'warn' },
-                dkim: { value: dkim, status: dkim === 'Present' ? 'pass' : 'warn' },
+                dkim: { 
+                    value: dkim ? 'Present' : 'Not found', 
+                    status: dkim ? 'pass' : 'warn',
+                    details: dkimParsed
+                },
                 dmarc: { value: dmarc, status: dmarc === 'Present' ? 'pass' : 'warn' },
                 returnPath: headers['return-path']?.[0] || 'Not found',
                 authResults: headers['authentication-results']?.[0] || 'Not found'
@@ -792,6 +856,39 @@
                 const className = `security-${item.status}`;
                 return `<span class="security-badge ${className}">${item.value}</span>`;
             };
+
+            const dkimDetailsHTML = security.dkim.details ? `
+                <div class="dkim-details">
+                   <div class="dkim-param">
+                        <span class="dkim-param-key">Version:</span>
+                        <span class="dkim-param-value">${security.dkim.details.version}</span>
+                    </div>
+                    <div class="dkim-param">
+                        <span class="dkim-param-key">Algorithm:</span>
+                        <span class="dkim-param-value">${security.dkim.details.algorithm}</span>
+                    </div>
+                    <div class="dkim-param">
+                        <span class="dkim-param-key">Domain:</span>
+                        <span class="dkim-param-value">${security.dkim.details.domain}</span>
+                    </div>
+                    <div class="dkim-param">
+                        <span class="dkim-param-key">Selector:</span>
+                        <span class="dkim-param-value">${security.dkim.details.selector}</span>
+                    </div>
+                    <div class="dkim-param">
+                        <span class="dkim-param-key">Headers:</span>
+                        <span class="dkim-param-value">${security.dkim.details.headers}</span>
+                    </div>
+                    <div class="dkim-param">
+                        <span class="dkim-param-key">Body Hash:</span>
+                        <span class="dkim-param-value">${security.dkim.details.bodyHash}</span>
+                    </div>
+                    <div class="dkim-param">
+                        <span class="dkim-param-key">Signature:</span>
+                        <span class="dkim-param-value">${security.dkim.details.signature.substring(0, 50)}...</span>
+                    </div>
+                </div>
+            ` : '';
             
             grid.innerHTML = `
                 <div class="info-card">
@@ -811,21 +908,29 @@
                             <div class="info-label">DMARC</div>
                             <div class="info-value">${getBadge(security.dmarc)}</div>
                         </div>
-                    </div>
-                </div>
-                <div class="info-card">
-                    <div class="info-card-header">
-                        <div class="info-card-title">📍 Source Info</div>
-                    </div>
-                    <div class="info-card-body">
                         <div class="info-row">
                             <div class="info-label">Return Path</div>
                             <div class="info-value">${security.returnPath}</div>
                         </div>
-                        <div class="info-row">
-                            <div class="info-label">Auth Results</div>
-                            <div class="info-value">${security.authResults}</div>
-                        </div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <div class="info-card-title">📋 DKIM Details</div>
+                    </div>
+                    <div class="info-card-body">
+                        ${security.dkim.details ? `
+                            <div class="info-row">
+                                <div class="info-label">Status</div>
+                                <div class="info-value">${getBadge(security.dkim)}</div>
+                            </div>
+                            ${dkimDetailsHTML}
+                        ` : `
+                            <div class="info-row">
+                                <div class="info-label">Status</div>
+                                <div class="info-value">Not Found</div>
+                            </div>
+                        `}
                     </div>
                 </div>
             `;
@@ -835,18 +940,13 @@
             const timeline = document.getElementById('routingTimeline');
             const routing = emailData.routing;
             
-            if (routing.length === 0) {
-                timeline.innerHTML = '<div class="info-card"><div class="info-card-body">No routing information found</div></div>';
-                return;
-            }
-            
             timeline.innerHTML = routing.map(hop => `
                 <div class="timeline-item">
                     <div class="timeline-step">Step ${hop.step}</div>
                     <div class="timeline-content">
-                        <strong>From:</strong> ${hop.from}<br>
-                        <strong>By:</strong> ${hop.by}<br>
-                        <strong>Time:</strong> ${hop.time}
+                        <div><strong>From:</strong> ${hop.from}</div>
+                        <div><strong>By:</strong> ${hop.by}</div>
+                        <div><strong>Time:</strong> ${hop.time}</div>
                     </div>
                 </div>
             `).join('');
@@ -856,7 +956,7 @@
             const grid = document.getElementById('technicalGrid');
             const tech = emailData.technical;
             
-         grid.innerHTML = `
+            grid.innerHTML = `
                 <div class="info-card">
                     <div class="info-card-header">
                         <div class="info-card-title">⚙️ Technical Details</div>
@@ -882,7 +982,7 @@
                 </div>
                 <div class="info-card">
                     <div class="info-card-header">
-                        <div class="info-card-title">📋 Additional</div>
+                        <div class="info-card-title">🏢 Organization</div>
                     </div>
                     <div class="info-card-body">
                         <div class="info-row">
@@ -912,8 +1012,6 @@
                 const originalText = btn.textContent;
                 btn.textContent = 'Copied!';
                 setTimeout(() => btn.textContent = originalText, 2000);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
             });
         }
 
@@ -923,17 +1021,15 @@
             const a = document.createElement('a');
             a.href = url;
             a.download = 'email-headers.txt';
-            document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
 
         function showError(message) {
-            const error = document.getElementById('error');
-            error.textContent = message;
-            error.style.display = 'block';
-            document.getElementById('results').style.display = 'none';
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 5000);
         }
     </script>
 </body>
